@@ -1,7 +1,23 @@
 #!/usr/bin/env Rscript
 # Download NHANES raw 80 Hz accelerometry data (2011-2014)
-# Uses NHANES.RAW80Hz package to programmatically fetch data
+# Uses nhanesA package to programmatically fetch data
 
+# Function to install and load required packages
+install_and_load <- function(pkg, verbose = FALSE) {
+  if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
+    cat(sprintf("Installing package: %s\n", pkg))
+    install.packages(pkg, repos="https://cloud.r-project.org", quiet = !verbose)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+# First, ensure optparse is installed (needed for argument parsing)
+if (!require("optparse", quietly = TRUE)) {
+  cat("Installing optparse package for command-line argument parsing...\n")
+  install.packages("optparse", repos="https://cloud.r-project.org")
+}
+
+# Now load optparse
 suppressPackageStartupMessages({
   library(optparse)
 })
@@ -19,31 +35,22 @@ option_list <- list(
   make_option(c("--verbose"), action="store_true", default=FALSE,
               help="Verbose output"),
   make_option(c("--install-pkg"), action="store_true", default=FALSE,
-              help="Install RNHANES package if missing")
+              help="Install nhanesA package if missing")
 )
 
 opt_parser <- OptionParser(option_list=option_list,
                           description="Download NHANES raw 80Hz accelerometry data")
 opt <- parse_args(opt_parser)
 
-# Function to install and load required packages
-install_and_load <- function(pkg) {
-  if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
-    cat(sprintf("Installing package: %s\n", pkg))
-    install.packages(pkg, repos="https://cloud.r-project.org", quiet = !opt$verbose)
-    library(pkg, character.only = TRUE)
-  }
-}
-
-# Check/install required packages
-if (opt$install_pkg || !require("RNHANES", quietly = TRUE)) {
+# Check/install nhanesA package
+if (opt$install_pkg || !require("nhanesA", quietly = TRUE)) {
   cat("Installing required packages...\n")
-  install_and_load("RNHANES")
+  install_and_load("nhanesA", opt$verbose)
 }
 
 # Load required packages
 suppressPackageStartupMessages({
-  library(RNHANES)
+  library(nhanesA)
 })
 
 cat("========================================\n")

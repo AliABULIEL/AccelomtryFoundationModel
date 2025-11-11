@@ -31,19 +31,21 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
 
 def download_minute_data(
     cycles: List[str],
-    output_dir: Path
+    download_dir: Path
 ) -> Dict[str, pd.DataFrame]:
     """
-    Download PAXMIN tables using R nhanesA.
+    Load PAXMIN tables from XPT files (no R required!).
+
+    Assumes XPT files have been downloaded by download_nhanes.py.
+    If not found, provides instructions to download them.
 
     Args:
         cycles: List of cycles like '2003-2004', '2011-2012'
-        output_dir: Output directory
+        download_dir: Directory containing downloaded XPT files
 
     Returns:
         Dictionary mapping cycle to DataFrame
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger(__name__)
 
     cycle_map = {
@@ -61,52 +63,28 @@ def download_minute_data(
             continue
 
         table_name = cycle_map[cycle]
-        logger.info(f"Downloading {table_name}...")
+        logger.info(f"Loading {table_name}...")
 
-        # Create R script
-        r_script = f"""
-library(nhanesA)
-data <- nhanes('{table_name}')
-if (!is.null(data)) {{
-    write.csv(data, '{output_dir / f"{table_name}.csv"}', row.names=FALSE)
-    cat('Success\\n')
-}} else {{
-    cat('Failed\\n')
-}}
-"""
-        r_file = output_dir / f"download_{table_name}.R"
-        r_file.write_text(r_script)
+        # Find XPT file
+        cycle_dir = download_dir / cycle.replace('-', '_')
+        xpt_file = cycle_dir / f"{table_name}.XPT"
+
+        if not xpt_file.exists():
+            logger.warning(f"  ✗ {table_name}: Not found at {xpt_file}")
+            logger.warning(f"     Download it first with:")
+            logger.warning(f"     python -m src.dataio.nhanes.download_nhanes --cycles {cycle} --data-types minute")
+            continue
 
         try:
-            result = subprocess.run(
-                ['Rscript', str(r_file)],
-                capture_output=True,
-                text=True,
-                timeout=600
-            )
+            # Load XPT file using pyreadstat
+            import pyreadstat
+            df, meta = pyreadstat.read_xport(str(xpt_file))
+            downloaded_data[cycle] = df
+            logger.info(f"  ✓ {table_name}: {len(df)} rows")
 
-            if result.returncode == 0 and 'Success' in result.stdout:
-                csv_file = output_dir / f"{table_name}.csv"
-                if csv_file.exists():
-                    df = pd.read_csv(csv_file)
-                    downloaded_data[cycle] = df
-                    logger.info(f"  ✓ {table_name}: {len(df)} rows")
-                else:
-                    logger.warning(f"  ✗ {table_name}: CSV not created")
-            else:
-                logger.warning(f"  ✗ {table_name}: Download failed")
-
-        except subprocess.TimeoutExpired:
-            logger.error(f"  ✗ {table_name}: Timeout")
-        except FileNotFoundError:
-            logger.error("  ✗ Rscript not found. Install R and nhanesA.")
-            break
         except Exception as e:
-            logger.error(f"  ✗ {table_name}: {e}")
-
-        # Clean up
-        if r_file.exists():
-            r_file.unlink()
+            logger.error(f"  ✗ {table_name}: Error loading XPT file: {e}")
+            continue
 
     return downloaded_data
 

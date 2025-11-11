@@ -49,15 +49,17 @@ def parse_xpt_file(filepath: Path) -> pd.DataFrame:
 
 def download_clinical_data(
     cycles: List[str],
-    output_dir: Path,
+    download_dir: Path,
     tables: Optional[List[str]] = None
 ) -> Dict[str, pd.DataFrame]:
     """
-    Download NHANES clinical data using R nhanesA package.
+    Load NHANES clinical data from XPT files (no R required!).
+
+    Assumes XPT files have been downloaded by download_nhanes.py.
 
     Args:
         cycles: List of cycle strings like '2011-2012'
-        output_dir: Output directory for downloaded files
+        download_dir: Directory containing downloaded XPT files
         tables: List of table prefixes to download (default: DEMO, BMX, BPX)
 
     Returns:
@@ -66,7 +68,6 @@ def download_clinical_data(
     if tables is None:
         tables = ['DEMO', 'BMX', 'BPX']
 
-    output_dir.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger(__name__)
 
     # Map cycles to letter codes
@@ -85,56 +86,31 @@ def download_clinical_data(
             continue
 
         letter = cycle_map[cycle]
+        cycle_dir = download_dir / cycle.replace('-', '_')
 
         for table in tables:
             table_name = f"{table}_{letter}"
-            logger.info(f"Downloading {table_name}...")
+            logger.info(f"Loading {table_name}...")
 
-            # Create R script to download
-            r_script = f"""
-library(nhanesA)
-data <- nhanes('{table_name}')
-if (!is.null(data)) {{
-    write.csv(data, '{output_dir / f"{table_name}.csv"}', row.names=FALSE)
-    cat('Success\\n')
-}} else {{
-    cat('Failed\\n')
-}}
-"""
-            r_file = output_dir / f"download_{table_name}.R"
-            r_file.write_text(r_script)
+            # Find XPT file
+            xpt_file = cycle_dir / f"{table_name}.XPT"
+
+            if not xpt_file.exists():
+                logger.warning(f"  ✗ {table_name}: Not found at {xpt_file}")
+                logger.warning(f"     Download it first with:")
+                logger.warning(f"     python -m src.dataio.nhanes.download_nhanes --cycles {cycle} --data-types {table.lower()}")
+                continue
 
             try:
-                result = subprocess.run(
-                    ['Rscript', str(r_file)],
-                    capture_output=True,
-                    text=True,
-                    timeout=300
-                )
-
-                if result.returncode == 0 and 'Success' in result.stdout:
-                    # Load the downloaded CSV
-                    csv_file = output_dir / f"{table_name}.csv"
-                    if csv_file.exists():
-                        df = pd.read_csv(csv_file)
-                        downloaded_data[table_name] = df
-                        logger.info(f"  ✓ {table_name}: {len(df)} rows")
-                    else:
-                        logger.warning(f"  ✗ {table_name}: CSV not created")
+                df = parse_xpt_file(xpt_file)
+                if not df.empty:
+                    downloaded_data[table_name] = df
+                    logger.info(f"  ✓ {table_name}: {len(df)} rows")
                 else:
-                    logger.warning(f"  ✗ {table_name}: Download failed")
+                    logger.warning(f"  ✗ {table_name}: Empty dataframe")
 
-            except subprocess.TimeoutExpired:
-                logger.error(f"  ✗ {table_name}: Timeout")
-            except FileNotFoundError:
-                logger.error("  ✗ Rscript not found. Install R and nhanesA package.")
-                break
             except Exception as e:
                 logger.error(f"  ✗ {table_name}: {e}")
-
-            # Clean up R script
-            if r_file.exists():
-                r_file.unlink()
 
     return downloaded_data
 
