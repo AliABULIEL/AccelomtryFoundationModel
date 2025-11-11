@@ -1,0 +1,106 @@
+# Base configuration for UK Biobank accelerometry processing
+# Default settings for 8.192s windows at 100 Hz
+
+# Data parameters
+data:
+  fs: 100  # Sampling frequency in Hz
+  window_sec: 8.192  # Window duration in seconds
+  hop_sec: 4.096  # Hop duration (50% overlap)
+  pad_mode: "none"  # Padding mode: none, reflect, zero
+  rounding: "floor"  # Window size rounding: floor, nearest, ceil
+
+  # Computed parameters (for reference)
+  # context_length = int(fs * window_sec) = 819 samples
+  # hop_length = int(fs * hop_sec) = 409 samples
+
+  # Gap handling
+  max_gap_ratio: 0.1  # Maximum ratio of gap samples per window (10%)
+  max_interpolate_ms: 250  # Maximum gap to interpolate (ms)
+
+  # Wear time filtering
+  min_wear_hours: 24  # Minimum wear time required per participant
+
+# Model parameters
+model:
+  context_length: 819  # Input sequence length in samples (8.192s at 100 Hz)
+  forecast_length: 200  # Forecast horizon in samples (~2s at 100 Hz)
+  n_channels: 3  # Number of input channels (x, y, z)
+
+  # TTM parameters (if using granite-tsfm)
+  model_name: "ibm-granite/granite-timeseries-ttm-v1"
+  freeze_backbone: false
+  dropout: 0.1
+
+# Training parameters
+training:
+  batch_size: 256
+  num_workers: 4
+  persistent_workers: true
+  pin_memory: true
+  prefetch_factor: 2
+
+  # Optimization
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  max_epochs: 100
+  warmup_epochs: 5
+
+  # Learning rate schedule
+  scheduler: "cosine"  # Options: cosine, step, plateau
+
+  # Early stopping
+  patience: 10
+  min_delta: 1.0e-4
+
+# Preprocessing
+preprocessing:
+  standardization: "instance"  # Options: instance, robust, global, none
+  eps: 1.0e-5
+
+  # Data augmentation (for training)
+  augmentation:
+    enabled: false
+    noise_std: 0.01
+    time_warp: false
+    magnitude_warp: false
+
+# Reproducibility
+seed: 42
+deterministic: true
+
+# I/O settings
+io:
+  storage_format: "hdf5"  # Options: hdf5, zarr
+  compression: "gzip"  # HDF5: gzip, lzf, szip / Zarr: zstd, blosc, gzip
+  compression_level: 4  # 0-9
+  cache_dir: "./cache"
+  output_dir: "./outputs"
+
+# Logging
+logging:
+  log_level: "INFO"
+  log_dir: "./logs"
+
+  # Experiment tracking
+  use_wandb: false
+  wandb_project: "ukb-accelerometry"
+  wandb_entity: null
+
+  use_tensorboard: true
+  tensorboard_dir: "./runs"
+
+  # Checkpointing
+  save_checkpoint_every: 5  # epochs
+  keep_last_n_checkpoints: 3
+
+# Hardware
+device: "cuda"  # Options: cuda, cpu, mps
+mixed_precision: true  # Use automatic mixed precision (AMP)
+compile_model: false  # Use torch.compile (PyTorch 2.0+)
+
+# Colab-specific settings (override when running on Colab)
+colab:
+  enabled: false
+  mount_drive: true
+  drive_path: "/content/drive/MyDrive"
+  use_high_precision_matmul: true  # torch.set_float32_matmul_precision("high")

@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ukb-ttm-accelerometry"
+version = "0.1.0"
+description = "Production-ready toolkit for UK Biobank accelerometry data preprocessing and TTM integration"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "UKB TTM Team"}
+]
+keywords = ["accelerometry", "time-series", "uk-biobank", "deep-learning", "granite-tsfm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # NOTE: tsfm must be installed separately from GitHub:
+    # pip install git+https://github.com/IBM/tsfm.git
+    # "tsfm @ git+https://github.com/IBM/tsfm.git",  # Uncomment if using pip 19.0+
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "scipy",
+    "numba",
+    "pyarrow",
+    "h5py",
+    "zarr",
+    "torch>=2.1",
+    "torchaudio",
+    "accelerometer>=1.1",
+    "pyyaml",
+    "tqdm",
+    "einops",
+    "scikit-learn",
+    "tensorboard",
+    "wandb",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "black",
+    "ruff",
+    "mypy",
+]
+
+# TTM models require tsfm from GitHub
+tsfm = [
+    "tsfm @ git+https://github.com/IBM/tsfm.git",
+]
+
+[project.scripts]
+prepare-ukb = "scripts.prepare_ukb:main"
+make-splits = "scripts.make_splits:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "scripts*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --cov=src --cov-report=term-missing"

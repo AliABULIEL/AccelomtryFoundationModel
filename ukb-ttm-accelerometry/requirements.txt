@@ -1,0 +1,35 @@
+# Model toolkit
+# NOTE: tsfm must be installed from GitHub (see installation instructions below)
+# Installation: pip install git+https://github.com/IBM/tsfm.git
+
+# Core scientific computing
+numpy>=1.26
+pandas>=2.0
+scipy
+numba
+
+# Data storage
+pyarrow
+h5py
+zarr
+
+# Deep learning
+torch>=2.1
+torchaudio
+
+# UK Biobank .cwa reader
+accelerometer>=1.1
+
+# Utilities
+pyyaml
+tqdm
+einops
+
+# ML & visualization
+scikit-learn
+tensorboard
+wandb
+
+# Testing
+pytest>=7.0
+pytest-cov

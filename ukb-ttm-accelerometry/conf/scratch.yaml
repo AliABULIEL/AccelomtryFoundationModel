@@ -1,0 +1,149 @@
+# Training from scratch configuration
+# Optimized for training models from random initialization
+
+# Inherit from base configuration
+defaults:
+  - base
+
+# Model parameters - strict 8.192s windows
+model:
+  context_length: 819  # Exact 8.192s at 100 Hz
+  forecast_length: 200  # ~2s forecast
+  n_channels: 3
+
+  # Train from scratch (no pretrained weights)
+  model_name: null  # Or specify a custom model architecture
+  freeze_backbone: false
+  dropout: 0.2  # Higher dropout for training from scratch
+
+  # Model architecture (if building custom)
+  architecture:
+    type: "transformer"  # Options: transformer, lstm, gru, conv
+    num_layers: 6
+    hidden_dim: 256
+    num_heads: 8
+    feedforward_dim: 1024
+    activation: "gelu"
+
+# Data parameters - strict 8.192s
+data:
+  window_sec: 8.192
+  hop_sec: 4.096
+  rounding: "floor"  # Floor to get exactly 819 samples
+
+# Training parameters for scratch training
+training:
+  batch_size: 256  # Can use larger batch for shorter sequences
+  num_workers: 4
+  persistent_workers: true
+
+  # Higher learning rate for training from scratch
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  max_epochs: 200  # More epochs needed from scratch
+  warmup_epochs: 10  # Longer warmup
+
+  # Gradient clipping (important for stability)
+  gradient_clip_val: 5.0
+  gradient_clip_algorithm: "norm"
+
+  # Learning rate schedule
+  scheduler: "cosine"
+  min_lr: 1.0e-6
+
+  # Early stopping
+  patience: 20  # More patience for scratch training
+  min_delta: 1.0e-5
+
+# Preprocessing with strong augmentation
+preprocessing:
+  standardization: "instance"
+  eps: 1.0e-5
+
+  augmentation:
+    enabled: true
+    noise_std: 0.03
+    time_warp: true
+    magnitude_warp: true
+    rotation: true
+    scaling: true
+    scaling_range: [0.9, 1.1]
+
+# Advanced training strategies
+advanced:
+  # Gradient accumulation
+  accumulate_grad_batches: 1
+
+  # Progressive training (start with shorter sequences)
+  progressive_training:
+    enabled: false
+    start_length: 512
+    target_length: 819
+    growth_schedule: "linear"
+
+  # Curriculum learning
+  curriculum_learning:
+    enabled: false
+    sort_by: "difficulty"
+    epochs_per_stage: 10
+
+  # Self-supervised pretraining
+  pretraining:
+    enabled: true
+    method: "forecasting"  # Options: forecasting, contrastive, masking
+    pretrain_epochs: 50
+
+# Regularization
+regularization:
+  # DropPath (stochastic depth)
+  drop_path_rate: 0.1
+
+  # Layer dropout
+  layer_dropout_rate: 0.1
+
+  # Weight initialization
+  init_method: "xavier_uniform"
+  init_gain: 1.0
+
+# Optimization strategies
+optimization:
+  # Optimizer
+  optimizer: "adamw"  # Options: adamw, sgd, lamb
+
+  # Learning rate finder
+  use_lr_finder: false
+  lr_finder_steps: 100
+
+  # Adaptive batch size
+  adaptive_batch_size: false
+  target_memory_usage: 0.8
+
+# Hardware optimization
+device: "cuda"
+mixed_precision: true
+compile_model: true
+
+# Checkpointing strategy
+logging:
+  save_checkpoint_every: 5
+  keep_last_n_checkpoints: 5
+  save_best_only: false
+
+  # More frequent validation
+  val_check_interval: 1.0  # Check every epoch
+  log_every_n_steps: 50
+
+  use_wandb: true
+  wandb_project: "ukb-accelerometry-scratch"
+
+  use_tensorboard: true
+
+# Data efficiency
+data_efficiency:
+  # Use subset for faster experimentation
+  use_data_subset: false
+  subset_fraction: 0.1
+
+  # Caching
+  cache_dataset: true
+  cache_validation: true

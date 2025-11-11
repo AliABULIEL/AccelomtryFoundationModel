@@ -1,0 +1,97 @@
+# Fine-tuning configuration for TTM-E (extended context)
+# Extends base.yaml with settings optimized for fine-tuning pretrained models
+
+# Inherit from base configuration
+defaults:
+  - base
+
+# Override model parameters for TTM-E alignment
+model:
+  context_length: 1024  # Extended context for TTM-E
+  forecast_length: 256  # Longer forecast horizon
+  n_channels: 3
+
+  # TTM pretrained model
+  model_name: "ibm-granite/granite-timeseries-ttm-v1"
+  freeze_backbone: false  # Allow backbone fine-tuning
+  dropout: 0.1
+
+  # Layer-wise learning rate decay (optional)
+  use_layer_lr_decay: true
+  layer_lr_decay: 0.9  # Decay factor for each layer
+
+# Data parameters (adjust windowing for longer context)
+data:
+  window_sec: 10.24  # Longer window to accommodate 1024 samples at 100 Hz
+  hop_sec: 5.12  # 50% overlap
+  rounding: "nearest"  # Use nearest for 1024 samples
+
+# Training parameters optimized for fine-tuning
+training:
+  batch_size: 128  # Reduced batch size for longer sequences
+  num_workers: 4
+  persistent_workers: true
+
+  # Fine-tuning specific optimization
+  learning_rate: 5.0e-5  # Lower LR for fine-tuning
+  weight_decay: 1.0e-4
+  max_epochs: 50  # Fewer epochs for fine-tuning
+  warmup_epochs: 3
+
+  # Gradient clipping
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: "norm"
+
+  # Learning rate schedule
+  scheduler: "cosine"
+  min_lr: 1.0e-6
+
+  # Early stopping
+  patience: 7
+  min_delta: 1.0e-5
+
+  # Regularization
+  label_smoothing: 0.1  # For classification tasks
+  mixup_alpha: 0.2  # Data augmentation
+
+# Preprocessing with augmentation for robustness
+preprocessing:
+  standardization: "instance"
+  eps: 1.0e-5
+
+  augmentation:
+    enabled: true
+    noise_std: 0.02
+    time_warp: true
+    magnitude_warp: true
+    rotation: true  # 3D rotation augmentation
+
+# Advanced training features
+advanced:
+  # Gradient accumulation for larger effective batch size
+  accumulate_grad_batches: 2  # Effective batch size = 128 * 2 = 256
+
+  # Stochastic weight averaging
+  use_swa: true
+  swa_start_epoch: 40
+  swa_lr: 1.0e-5
+
+  # Exponential moving average of weights
+  use_ema: true
+  ema_decay: 0.999
+
+# Hardware optimization
+device: "cuda"
+mixed_precision: true
+compile_model: true  # Use torch.compile for faster training
+
+# Checkpointing strategy
+logging:
+  save_checkpoint_every: 2
+  keep_last_n_checkpoints: 5
+  save_best_only: false
+
+  use_wandb: true
+  wandb_project: "ukb-accelerometry-finetune"
+
+  use_tensorboard: true
