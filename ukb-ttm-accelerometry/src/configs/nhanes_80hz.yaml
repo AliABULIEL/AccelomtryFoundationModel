@@ -1,0 +1,139 @@
+# NHANES 80 Hz Accelerometry Configuration
+# For seconds-scale modeling with raw 80 Hz data
+
+# Data configuration
+data:
+  name: "nhanes_80hz"
+  source: "NHANES 2011-2014"
+  device: "ActiGraph GT3X+"
+  device_location: "hip"
+
+  # Sampling
+  fs: 80  # Hz
+  channels: 3  # x, y, z
+
+  # Windowing
+  window_sec: 8.192  # seconds (655 samples at 80 Hz)
+  hop_sec: 4.096     # seconds (327 samples, 50% overlap)
+  rounding: "floor"  # floor, nearest, or ceil
+
+  # Paths
+  raw_dir: "data/nhanes/raw80"
+  parquet_dir: "data/nhanes/80hz_parquet"
+  windows_dir: "data/nhanes/80hz_windows"
+  splits_dir: "data/nhanes/splits"
+  clinical_csv: "data/nhanes/clinical.csv"
+
+  # Quality control
+  max_gap_ratio: 0.1  # Maximum 10% gaps per window
+  min_wear_hours: 10  # Minimum wear time per participant
+
+# Model configuration
+model:
+  name: "ttm_80hz"
+  type: "forecasting"  # or "classification"
+
+  # Architecture
+  context_length: 655      # 8.192s at 80 Hz
+  forecast_length: 164     # ~2s forecast (25% of context)
+  num_channels: 3          # x, y, z
+
+  # TTM-specific
+  use_granite_ttm: true
+  model_id: "ibm-granite/granite-timeseries-ttm-v1"
+  freeze_backbone: false
+
+  # Custom architecture (if not using Granite TTM)
+  hidden_dim: 256
+  num_layers: 6
+  num_heads: 8
+  dropout: 0.1
+
+# Training configuration
+training:
+  # Optimization
+  batch_size: 128
+  learning_rate: 5.0e-5
+  weight_decay: 1.0e-4
+  max_epochs: 100
+  early_stopping_patience: 10
+
+  # Scheduler
+  scheduler: "cosine"  # cosine, step, or plateau
+  warmup_epochs: 5
+
+  # Gradient
+  grad_clip_norm: 1.0
+  gradient_accumulation_steps: 1
+
+  # Precision
+  mixed_precision: true
+  precision: "16-mixed"  # or "bf16-mixed"
+
+  # Augmentation
+  use_time_masking: false
+  use_channel_masking: false
+
+# Preprocessing
+preprocessing:
+  # Standardization (RevIN-style)
+  standardize: true
+  standardization_type: "instance"  # instance or global
+
+  # Non-wear filtering
+  apply_nonwear_detection: true
+  nonwear_algorithm: "choi"  # choi or troiano
+  nonwear_threshold: 0.5     # Max 50% non-wear per window
+
+  # Outlier clipping
+  clip_outliers: true
+  clip_threshold_g: 4.0  # 4g threshold
+
+  # High-pass filter
+  apply_highpass: true
+  highpass_cutoff: 0.25  # Hz
+
+# Exogenous features
+exogenous:
+  use_time_features: true
+  use_clinical_features: true
+
+  clinical_features:
+    - age
+    - sex
+    - bmi
+    - race_eth
+
+  time_features:
+    - hour_sin
+    - hour_cos
+    - day_of_week_sin
+    - day_of_week_cos
+
+# Evaluation
+evaluation:
+  metrics:
+    - "mse"
+    - "mae"
+    - "mape"
+    - "smape"
+
+  # Forecasting-specific
+  forecast_horizons: [41, 82, 164]  # 0.5s, 1s, 2s
+
+# Reproducibility
+seed: 42
+deterministic: true
+num_workers: 4
+pin_memory: true
+
+# Logging
+logging:
+  log_dir: "logs/nhanes_80hz"
+  save_dir: "checkpoints/nhanes_80hz"
+  log_every_n_steps: 50
+  val_check_interval: 1.0
+
+# Hardware
+accelerator: "auto"  # auto, cpu, gpu, tpu
+devices: "auto"      # auto or specific device IDs

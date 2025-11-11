@@ -1,0 +1,153 @@
+# NHANES Minute-Level Accelerometry Configuration
+# For minute/hour/day-scale modeling with activity summaries
+
+# Data configuration
+data:
+  name: "nhanes_minute"
+  source: "NHANES 2003-2014"
+  device: "ActiGraph GT3X+ / AM-7164"
+  device_location: "hip"
+
+  # Sampling
+  resolution: "1min"  # Minute-level summaries
+  channels: 1         # Aggregated activity summaries
+
+  # Windowing
+  context_length: 1024     # minutes (17.1 hours)
+  prediction_length: 96    # minutes (1.6 hours)
+  min_wear_fraction: 0.8   # Require 80% wear in context
+
+  # Paths
+  raw_minute_dir: "data/nhanes/minute_raw"
+  minute_summaries_csv: "data/nhanes/minute_summaries.csv"
+  windows_dir: "data/nhanes/minute_windows"
+  splits_dir: "data/nhanes/splits"
+  clinical_csv: "data/nhanes/clinical.csv"
+
+  # Cycles
+  cycles:
+    - "2003-2004"  # PAXMIN_C
+    - "2005-2006"  # PAXMIN_D
+    - "2011-2012"  # PAXMIN_G
+    - "2013-2014"  # PAXMIN_H
+
+# Model configuration
+model:
+  name: "ttm_minute"
+  type: "forecasting"
+
+  # Architecture
+  context_length: 1024     # 17.1 hours
+  forecast_length: 96      # 1.6 hours
+  num_channels: 1          # Single activity summary
+
+  # TTM-specific
+  use_granite_ttm: true
+  model_id: "ibm-granite/granite-timeseries-ttm-v1"
+  freeze_backbone: false
+
+  # Custom architecture (if not using Granite TTM)
+  hidden_dim: 512
+  num_layers: 8
+  num_heads: 16
+  dropout: 0.1
+
+# Training configuration
+training:
+  # Optimization
+  batch_size: 64
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-4
+  max_epochs: 200
+  early_stopping_patience: 15
+
+  # Scheduler
+  scheduler: "cosine"  # cosine, step, or plateau
+  warmup_epochs: 10
+
+  # Gradient
+  grad_clip_norm: 1.0
+  gradient_accumulation_steps: 2  # Effective batch size: 128
+
+  # Precision
+  mixed_precision: true
+  precision: "16-mixed"  # or "bf16-mixed"
+
+  # Augmentation
+  use_time_masking: false
+  use_amplitude_scaling: true
+  scaling_factor_range: [0.8, 1.2]
+
+# Preprocessing
+preprocessing:
+  # Standardization
+  standardize: true
+  standardization_type: "instance"  # instance or global
+
+  # Normalization
+  log_transform: false
+  normalize_range: null  # or [0, 1] for min-max
+
+  # Imputation (for missing values)
+  impute_strategy: "zero"  # zero, mean, forward_fill
+
+# Exogenous features
+exogenous:
+  use_time_features: true
+  use_clinical_features: true
+
+  clinical_features:
+    - age
+    - sex
+    - bmi
+    - race_eth
+    - cycle  # NHANES cycle as categorical
+
+  time_features:
+    - hour_sin
+    - hour_cos
+    - day_of_week_sin
+    - day_of_week_cos
+    - month_sin
+    - month_cos
+    - is_weekend
+
+# Evaluation
+evaluation:
+  metrics:
+    - "mse"
+    - "mae"
+    - "mape"
+    - "smape"
+    - "r2"
+
+  # Forecasting-specific
+  forecast_horizons: [24, 48, 96]  # 24min, 48min, 96min ahead
+
+  # Minute-level specific metrics
+  compute_wear_time_accuracy: true
+  compute_activity_distribution: true
+
+# Reproducibility
+seed: 42
+deterministic: true
+num_workers: 4
+pin_memory: true
+
+# Logging
+logging:
+  log_dir: "logs/nhanes_minute"
+  save_dir: "checkpoints/nhanes_minute"
+  log_every_n_steps: 50
+  val_check_interval: 1.0
+
+# Hardware
+accelerator: "auto"  # auto, cpu, gpu, tpu
+devices: "auto"      # auto or specific device IDs
+
+# Complex survey design (NHANES-specific)
+survey:
+  use_survey_weights: true
+  weight_variable: "WTMEC2YR"  # Mobile Exam Center weight
+  stratification_variable: "SDMVSTRA"
+  psu_variable: "SDMVPSU"
