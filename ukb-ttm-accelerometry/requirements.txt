@@ -19,10 +19,10 @@ polars>=1.5
 torch>=2.1
 torchaudio
 
-# UK Biobank .cwa reader
-accelerometer>=1.1
+# UK Biobank .cwa reader (OPTIONAL - only needed for UK Biobank data)
+# accelerometer>=1.1  # Conflicts with scikit-learn - install separately if needed
 
-# NHANES data readers
+# NHANES data readers (REQUIRED for NHANES data)
 pyreadstat>=1.2  # For XPT file parsing
 
 # Utilities
