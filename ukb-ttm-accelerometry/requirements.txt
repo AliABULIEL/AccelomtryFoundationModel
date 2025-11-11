@@ -10,8 +10,10 @@ numba
 
 # Data storage
 pyarrow
+fastparquet
 h5py
 zarr
+polars>=1.5
 
 # Deep learning
 torch>=2.1
@@ -19,6 +21,9 @@ torchaudio
 
 # UK Biobank .cwa reader
 accelerometer>=1.1
+
+# NHANES data readers
+pyreadstat>=1.2  # For XPT file parsing
 
 # Utilities
 pyyaml

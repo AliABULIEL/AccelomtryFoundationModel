@@ -2,7 +2,7 @@
 # Download NHANES raw 80 Hz accelerometry data (2011-2014)
 # Uses NHANES.RAW80Hz package to programmatically fetch data
 
-suppressPackageStartMessages({
+suppressPackageStartupMessages({
   library(optparse)
 })
 
@@ -42,7 +42,7 @@ if (opt$install_pkg || !require("RNHANES", quietly = TRUE)) {
 }
 
 # Load required packages
-suppressPackageStartMessages({
+suppressPackageStartupMessages({
   library(RNHANES)
 })
 
