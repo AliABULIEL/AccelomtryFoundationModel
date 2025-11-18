@@ -1,0 +1,78 @@
+# TTM Accelerometry System Configuration
+# Production-ready defaults for Google Colab
+
+experiment_name: "ttm_accelerometry"
+seed: 42
+
+# Data Configuration
+data:
+  data_dir: "./data"
+  cache_dir: "./data/cache"
+  window_size: 820  # 8.192 seconds at 100Hz
+  stride: 410  # 50% overlap
+  sample_rate: 100
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  use_cache: true
+  max_files: null  # Set to small number for testing
+
+# Model Configuration
+model:
+  model_name: "ibm-granite/granite-timeseries-ttm-r2"
+  n_classes: 4  # Sleep, Sedentary, Light, MVPA
+  n_channels: 3  # X, Y, Z
+  context_length: 512
+  hidden_dim: 256
+  dropout: 0.3
+  use_lora: false  # Will be enabled in Stage 2
+  lora_rank: 8
+  lora_alpha: 16
+  freeze_encoder: true  # Will be unfrozen in Stage 3
+
+# Training Configuration
+training:
+  # Stage 1: Linear Probe
+  stage1_epochs: 10
+  stage1_lr: 0.001
+  stage1_weight_decay: 0.01
+
+  # Stage 2: LoRA Fine-tuning
+  stage2_epochs: 20
+  stage2_lr: 0.0001
+  stage2_weight_decay: 0.01
+
+  # Stage 3: Full Fine-tuning
+  stage3_epochs: 10
+  stage3_lr: 0.00001
+  stage3_weight_decay: 0.01
+
+  # General Training
+  batch_size: 64
+  gradient_accumulation_steps: 4  # Effective batch = 256
+  max_grad_norm: 1.0
+  use_amp: true  # Mixed precision (FP16)
+  num_workers: 2
+
+  # Checkpointing
+  checkpoint_dir: "./checkpoints"
+  save_every: 1000
+  log_every: 100
+
+# Augmentation Configuration
+augmentation:
+  use_ssl: true
+  use_standard: true
+  time_warp_range: [0.85, 1.15]  # ±15%
+  n_permutation_segments: 4
+  p_augment: 0.5
+  noise_std: 0.01
+  rotation_max_angle: 15.0
+
+# Colab-Specific Configuration
+colab:
+  mount_drive: true
+  drive_path: "/content/drive"
+  use_gradient_checkpointing: true
+  target_gpu_memory_gb: 3.0
+  min_batch_size: 8
