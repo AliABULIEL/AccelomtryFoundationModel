@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(python3 -m py_compile:*)",
+      "Bash(python3:*)",
+      "Bash(tree:*)",
+      "Bash(chmod:*)",
+      "Bash(/Users/aliab/Desktop/GitHub/AccelomtryFoundationModel/ukb-ttm-accelerometry/src/dataio/nhanes/parse_80hz.py)",
+      "Bash(for f in nonwear.py merge_clinical.py parse_minute.py datasets_nhanes.py)",
+      "Bash(do touch \"/Users/aliab/Desktop/GitHub/AccelomtryFoundationModel/ukb-ttm-accelerometry/src/dataio/nhanes/$f\")",
+      "Bash(\"/Users/aliab/Desktop/GitHub/AccelomtryFoundationModel/ukb-ttm-accelerometry/src/dataio/nhanes/$f\")",
+      "Bash(done)",
+      "Bash(scripts/ingest_nhanes_80hz.sh:*)",
+      "Bash(for f in ingest_nhanes_minute.py make_splits_nhanes.py)",
+      "Bash(do echo \"# placeholder\")",
+      "Bash(\"scripts/$f\")",
+      "Bash(for f in test_nhanes_80hz.py test_nhanes_minute.py)",
+      "Bash(\"tests/$f\")",
+      "Bash(src/configs/nhanes_80hz.yaml)",
+      "Bash(src/configs/nhanes_minute.yaml)",
+      "Bash(Rscript:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c:*)",
+      "Bash(python -m src.dataio.nhanes.download_nhanes:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
