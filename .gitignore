@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Data and caches
+*.h5
+*.hdf5
+*.csv
+*.cwa
+*.parquet
+synthetic_data/
+cache/
+
+# Logs and outputs
+*.log
+logs/
+outputs/
+checkpoints/
+test_outputs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/

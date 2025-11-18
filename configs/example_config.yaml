@@ -1,0 +1,93 @@
+# FILE: configs/example_config.yaml
+
+# Example configuration for UKB TTM Accelerometry Foundation Model
+
+# ============================================================
+# Data Configuration
+# ============================================================
+
+window_seconds: 10
+sampling_rate_hz: 50
+batch_size: 32
+num_workers: 2
+max_windows_per_participant: null  # null = use all windows, or set to integer for Colab
+overlap_fraction: 0.0
+normalize_per_window: true
+
+# Data paths (update these for your environment)
+accel_data_dir: "/content/drive/MyDrive/ukb_accel"
+clinical_csv_path: "/content/drive/MyDrive/ukb_accel/clinical.csv"
+cache_hdf5_path: "/content/drive/MyDrive/ukb_accel/cache.h5"
+
+# Data split ratios
+train_ratio: 0.7
+val_ratio: 0.15
+test_ratio: 0.15
+
+# Clinical metadata
+label_type: "bmi_class"  # Options: bmi_class, bmi, age_group, sex, hypertension, diabetes
+metadata_columns:
+  - age
+  - sex
+  - bmi
+
+# ============================================================
+# SSL Pretraining Configuration
+# ============================================================
+
+ssl_epochs: 50
+ssl_learning_rate: 0.001
+ssl_mask_ratio: 0.3
+ssl_patch_length: 16
+ssl_context_length: 512
+
+# ============================================================
+# Fine-tuning Configuration
+# ============================================================
+
+ft_epochs: 30
+ft_learning_rate: 0.0001
+backbone_freeze_epochs: 5
+
+# ============================================================
+# Optimization Settings
+# ============================================================
+
+weight_decay: 0.0001
+gradient_accumulation_steps: 1
+max_grad_norm: 1.0
+warmup_steps: 500
+scheduler_type: "cosine"
+
+# ============================================================
+# Colab/IO Settings
+# ============================================================
+
+use_mixed_precision: true
+checkpoint_dir: "./checkpoints"
+log_dir: "./logs"
+save_every_n_epochs: 5
+device: "cuda"
+
+# ============================================================
+# Evaluation Settings
+# ============================================================
+
+val_interval: 1
+early_stopping_patience: 10
+metric_for_best_model: "val_loss"
+
+# ============================================================
+# Model Architecture (TTM specific)
+# ============================================================
+
+num_layers: 4
+d_model: 64
+num_heads: 4
+dropout: 0.1
+
+# ============================================================
+# Reproducibility
+# ============================================================
+
+seed: 42
