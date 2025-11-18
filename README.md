@@ -27,7 +27,21 @@ Production-grade system for UK Biobank accelerometry analysis using IBM's Tiny T
 
 ## 🚀 Quick Start
 
-### Installation
+### Option 1: VS Code + Colab GPU (Recommended for Development)
+
+Develop in VS Code locally while using Colab's free GPU!
+
+```bash
+# 1. Open Colab notebook: notebooks/Colab_VSCode_Setup.ipynb
+# 2. Run all cells to setup SSH
+# 3. Connect VS Code using Remote-SSH extension
+# 4. Code in VS Code, execute on Colab GPU!
+```
+
+**See [VSCODE_QUICKSTART.md](VSCODE_QUICKSTART.md) for 5-minute setup guide**
+**Full guide: [VSCODE_COLAB_GUIDE.md](VSCODE_COLAB_GUIDE.md)**
+
+### Option 2: Local Installation
 
 ```bash
 # Clone repository
@@ -39,7 +53,7 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-### Google Colab
+### Option 3: Google Colab Only
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/AccelomtryFoundationModel/blob/main/notebooks/TTM_Accelerometry_Training.ipynb)
 
